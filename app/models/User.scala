@@ -2,35 +2,56 @@ package model
 
 import javax.inject._
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{JsValue, Json, OFormat}
+import play.api.libs.json.{JsValue, Json, OFormat, Format, JsString, JsSuccess, JsValue, Json, OFormat}
 
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import slick.sql.SqlProfile.ColumnOption.SqlType
 
 object UserSchema {
-  case class User(id: Long, firstName: String, lastName: String, mobile: Long, email: String) {
-    def toPublic = UserPublic(id, firstName, lastName, mobile, email)
-  }
 
+  case class User(id: Long, first_name: String, last_name: String, mobile: Long, email: String, createdAt: Timestamp, updatedAt: Timestamp) {
+    implicit object timestampFormat extends Format[Timestamp] {
+      val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
+      def reads(json: JsValue) = {
+        val str = json.as[String]
+        JsSuccess(new Timestamp(format.parse(str).getTime))
+      }
+      def writes(ts: Timestamp) = JsString(format.format(ts))
+    }
+    def toPublic = UserPublic(id, first_name, last_name, mobile, email, createdAt, updatedAt)
+  }
   object UserObject {
     implicit val format: OFormat[User] = Json.format[User]
   }
 
   class UserTable(tag: Tag) extends Table[User](tag, "user") {
 
-    def id = column[Long]("id", O.PrimaryKey,O.AutoInc)
-    def firstName = column[String]("first_name")
-    def lastName = column[String]("last_name")
+    def id = column[Long]("id", O.PrimaryKey)
+
+    def first_name = column[String]("first_name")
+
+    def last_name = column[String]("last_name")
+
     def mobile = column[Long]("mobile")
+
     def email = column[String]("email")
 
-    override def * = (id, firstName, lastName, mobile, email).mapTo[User]
+    def createdAt = column[Timestamp]("createdAt", SqlType("timestamp not null default CURRENT_TIMESTAMP"))
+
+    def updatedAt = column[Timestamp]("updatedAt", SqlType("timestamp not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP"))
+
+    def * = (id, first_name, last_name, mobile, email, createdAt, updatedAt).mapTo[User]
+
+
   }
 
-  val users = TableQuery[UserTable]
-
+  val users = TableQuery[User]
 }
+
 
 @Singleton
 class UserRepository @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
@@ -61,15 +82,26 @@ class UserRepository @Inject() (protected val dbConfigProvider: DatabaseConfigPr
 
 case class UserPublic(
                        id: Long,
-                       firstName: String,
-                       lastName: String,
+                       first_name: String,
+                       last_name: String,
                        mobile: Long,
-                       email: String
+                       email: String,
+                       createdAt: Timestamp,
+                       updatedAt: Timestamp
                      ) {
   def toJsValue: JsValue = Json.toJson(this)
   override def toString: String = toJsValue.toString()
 }
 
 object UserPublic {
+  implicit object timestampFormat extends Format[Timestamp] {
+    val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
+    def reads(json: JsValue) = {
+      val str = json.as[String]
+      JsSuccess(new Timestamp(format.parse(str).getTime))
+    }
+    def writes(ts: Timestamp) = JsString(format.format(ts))
+  }
   implicit val format: OFormat[UserPublic] = Json.format[UserPublic]
 }
+
