@@ -1,16 +1,12 @@
 package model
 
-import java.util.UUID
-
 import javax.inject._
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{Json, JsValue, OFormat}
+import play.api.libs.json.{JsValue, Json, OFormat}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.JdbcProfile
 import slick.jdbc.MySQLProfile.api._
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 object UserSchema {
   case class User(id: Long, firstName: String, lastName: String, mobile: Long, email: String) {
@@ -37,7 +33,7 @@ object UserSchema {
 }
 
 @Singleton
-class UserRepository @Inject() (protected val dbConfigProvider: DatabaseConfigProvider) {
+class UserRepository @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
 
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
