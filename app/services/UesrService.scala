@@ -7,7 +7,7 @@ import scala.concurrent.Future
 @Singleton
 class UserService @Inject() (protected val userRepository: UserRepository) {
 
-  def addUser(user: User): Future[String] = {
+  def addUser(user: UserSchema.User): Future[String] = {
     userRepository.add(user)
   }
 
@@ -15,11 +15,11 @@ class UserService @Inject() (protected val userRepository: UserRepository) {
     userRepository.delete(id)
   }
 
-  def getUser(id: Long): Future[Option[User]] = {
+  def getUser(id: Long): Future[Option[UserSchema.User]] = {
     userRepository.get(id)
   }
 
-  def listAllUsers: Future[Seq[User]] = {
+  def listAllUsers: Future[Seq[UserSchema.User]] = {
     userRepository.listAll
   }
 }

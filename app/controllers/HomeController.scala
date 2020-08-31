@@ -25,6 +25,6 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents, u
    */
   def index() = Action { implicit request: Request[AnyContent] =>
     val users = Await.result(userService.listAllUsers, Duration.Inf)
-    Ok(Json.toJson("users" -> users.map(_.firstName)))
+    Ok(Json.toJson("users" -> users.map(_.toPublic)))
   }
 }
